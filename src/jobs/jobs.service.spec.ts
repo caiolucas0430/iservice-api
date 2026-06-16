@@ -1,9 +1,14 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { JobsService } from './jobs.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Job } from './entities/job.entity';
+import { Job, JobStatus } from './entities/job.entity';
 import { UsersService } from 'src/users/users.service';
 import { CreateJobDto } from './dto/create-job.dto';
+import {
+  NotFoundException,
+  ConflictException,
+  ForbiddenException,
+} from '@nestjs/common';
 
 describe('JobsService', () => {
   let service: JobsService;
@@ -174,6 +179,93 @@ describe('JobsService', () => {
 
       expect(mockJobRepository.find).toHaveBeenCalled();
       expect(Array.isArray(result)).toBe(true);
+    });
+  });
+
+  describe('cancelJob', () => {
+    const mockJobId = 'job-123';
+    const mockClientId = 'client-123';
+    const mockProfessionalId = 'prof-123';
+
+    it('deve cancelar o job se o solicitante for o cliente criador', async () => {
+      const mockJob = {
+        id: mockJobId,
+        status: JobStatus.SEARCHING,
+        client: { id: mockClientId },
+        professional: null,
+      };
+
+      mockJobRepository.findOne = jest.fn().mockResolvedValue(mockJob);
+      mockJobRepository.save.mockResolvedValue({
+        ...mockJob,
+        status: JobStatus.CANCELED,
+      });
+
+      const result = await service.cancelJob(mockJobId, mockClientId);
+
+      expect(mockJobRepository.findOne).toHaveBeenCalledWith({
+        where: { id: mockJobId },
+        relations: ['client', 'professional'],
+      });
+      expect(result.status).toBe(JobStatus.CANCELED);
+    });
+
+    it('deve remover o profissional e voltar o status para SEARCHING se o profissional cancelar', async () => {
+      const mockJob = {
+        id: mockJobId,
+        status: JobStatus.ACCEPTED,
+        client: { id: mockClientId },
+        professional: { id: mockProfessionalId },
+      };
+
+      mockJobRepository.findOne = jest.fn().mockResolvedValue(mockJob);
+      mockJobRepository.save.mockResolvedValue({
+        ...mockJob,
+        status: JobStatus.SEARCHING,
+        professional: null,
+      });
+
+      const result = await service.cancelJob(mockJobId, mockProfessionalId);
+
+      expect(result.status).toBe(JobStatus.SEARCHING);
+      expect(result.professional).toBeNull();
+    });
+
+    it('deve lançar NotFoundException se o job não existir', async () => {
+      mockJobRepository.findOne = jest.fn().mockResolvedValue(null);
+
+      await expect(
+        service.cancelJob(mockJobId, mockClientId),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('deve lançar ConflictException se o job já estiver concluído', async () => {
+      const mockJob = {
+        id: mockJobId,
+        status: JobStatus.COMPLETED,
+        client: { id: mockClientId },
+      };
+
+      mockJobRepository.findOne = jest.fn().mockResolvedValue(mockJob);
+
+      await expect(
+        service.cancelJob(mockJobId, mockClientId),
+      ).rejects.toThrow(ConflictException);
+    });
+
+    it('deve lançar ForbiddenException se o usuário não tiver permissão', async () => {
+      const mockJob = {
+        id: mockJobId,
+        status: JobStatus.SEARCHING,
+        client: { id: mockClientId },
+        professional: null,
+      };
+
+      mockJobRepository.findOne = jest.fn().mockResolvedValue(mockJob);
+
+      await expect(
+        service.cancelJob(mockJobId, 'other-user'),
+      ).rejects.toThrow(ForbiddenException);
     });
   });
 });

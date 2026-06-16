@@ -29,5 +29,5 @@ export class Job extends BaseEntity {
   client: User;
 
   @ManyToOne(() => User, (user) => user.acceptedJobs, { nullable: true })
-  professional: User;
+  professional: User | null;
 }

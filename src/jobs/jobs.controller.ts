@@ -6,6 +6,8 @@ import {
   UseGuards,
   Req,
   Query,
+  Patch,
+  Param,
 } from '@nestjs/common';
 import { JobsService } from './jobs.service';
 import { CreateJobDto } from './dto/create-job.dto';
@@ -48,5 +50,10 @@ export class JobsController {
       parseFloat(lng),
       radius,
     );
+  }
+
+  @Patch(':id/cancel')
+  async cancelJob(@Param('id') id: string, @Req() req: AuthRequest) {
+    return this.jobsService.cancelJob(id, req.user.id);
   }
 }
