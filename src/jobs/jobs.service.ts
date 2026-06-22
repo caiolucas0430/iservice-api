@@ -105,4 +105,34 @@ export class JobsService {
 
     return this.jobRepository.save(job);
   }
+
+  async acceptJob(jobId: string, professionalId: string) {
+    const job = await this.jobRepository.findOne({
+      where: { id: jobId },
+      relations: ['client', 'professional'],
+    });
+
+    if (!job) throw new NotFoundException('Job not found');
+
+    if (job.client.id === professionalId) {
+      throw new ConflictException('You cannot accept your own job');
+    }
+
+    if (job.status !== JobStatus.SEARCHING) {
+      throw new ConflictException('Job is no longer available');
+    }
+
+    if (job.professional) {
+      throw new ConflictException(
+        'Job has already been accepted by another professional',
+      );
+    }
+
+    const professionalUser = await this.userRepository.findById(professionalId);
+
+    job.status = JobStatus.ACCEPTED;
+    job.professional = professionalUser;
+
+    return this.jobRepository.save(job);
+  }
 }

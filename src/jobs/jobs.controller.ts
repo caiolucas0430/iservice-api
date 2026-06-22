@@ -56,4 +56,10 @@ export class JobsController {
   async cancelJob(@Param('id') id: string, @Req() req: AuthRequest) {
     return this.jobsService.cancelJob(id, req.user.id);
   }
+
+  @Patch(':id/accept')
+  @Roles(RoleName.PROFESSIONAL)
+  async acceptJob(@Param('id') id: string, @Req() req: AuthRequest) {
+    return this.jobsService.acceptJob(id, req.user.id);
+  }
 }
