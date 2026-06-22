@@ -143,4 +143,29 @@ export class JobsService {
 
     return this.jobRepository.save(job);
   }
+
+  async completeJob(jobId: string, professionalId: string) {
+    const job = await this.jobRepository.findOne({
+      where: { id: jobId },
+      relations: ['professional'],
+    });
+
+    if (!job) throw new NotFoundException('Job not found');
+
+    if (job.status !== JobStatus.ACCEPTED) {
+      throw new ConflictException(
+        `Cannot complete a job in ${job.status} state`,
+      );
+    }
+
+    if (!job.professional || job.professional.id !== professionalId) {
+      throw new ForbiddenException(
+        'You do not have permission to complete this job',
+      );
+    }
+
+    job.status = JobStatus.COMPLETED;
+
+    return this.jobRepository.save(job);
+  }
 }

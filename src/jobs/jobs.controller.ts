@@ -68,4 +68,10 @@ export class JobsController {
   findMyServices(@Req() req: AuthRequest) {
     return this.jobsService.findByProfessional(req.user.id);
   }
+
+  @Patch(':id/complete')
+  @Roles(RoleName.PROFESSIONAL)
+  async completeJob(@Param('id') id: string, @Req() req: AuthRequest) {
+    return this.jobsService.completeJob(id, req.user.id);
+  }
 }

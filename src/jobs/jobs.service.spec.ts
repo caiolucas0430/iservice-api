@@ -365,4 +365,67 @@ describe('JobsService', () => {
       ).rejects.toThrow(ConflictException);
     });
   });
+
+  describe('completeJob', () => {
+    const mockJobId = 'job-123';
+    const mockProfessionalId = 'prof-123';
+
+    it('deve concluir o job com sucesso', async () => {
+      const mockJob = {
+        id: mockJobId,
+        status: JobStatus.ACCEPTED,
+        professional: { id: mockProfessionalId },
+      };
+
+      mockJobRepository.findOne = jest.fn().mockResolvedValue(mockJob);
+      mockJobRepository.save.mockResolvedValue({
+        ...mockJob,
+        status: JobStatus.COMPLETED,
+      });
+
+      const result = await service.completeJob(mockJobId, mockProfessionalId);
+
+      expect(mockJobRepository.findOne).toHaveBeenCalledWith({
+        where: { id: mockJobId },
+        relations: ['professional'],
+      });
+      expect(result.status).toBe(JobStatus.COMPLETED);
+    });
+
+    it('deve lançar NotFoundException se o job não for encontrado', async () => {
+      mockJobRepository.findOne = jest.fn().mockResolvedValue(null);
+
+      await expect(
+        service.completeJob(mockJobId, mockProfessionalId),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('deve lançar ConflictException se o status do job não for ACCEPTED', async () => {
+      const mockJob = {
+        id: mockJobId,
+        status: JobStatus.SEARCHING,
+        professional: { id: mockProfessionalId },
+      };
+
+      mockJobRepository.findOne = jest.fn().mockResolvedValue(mockJob);
+
+      await expect(
+        service.completeJob(mockJobId, mockProfessionalId),
+      ).rejects.toThrow(ConflictException);
+    });
+
+    it('deve lançar ForbiddenException se um usuário diferente tentar concluir', async () => {
+      const mockJob = {
+        id: mockJobId,
+        status: JobStatus.ACCEPTED,
+        professional: { id: mockProfessionalId },
+      };
+
+      mockJobRepository.findOne = jest.fn().mockResolvedValue(mockJob);
+
+      await expect(
+        service.completeJob(mockJobId, 'other-user'),
+      ).rejects.toThrow(ForbiddenException);
+    });
+  });
 });
