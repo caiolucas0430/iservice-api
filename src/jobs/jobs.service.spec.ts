@@ -182,6 +182,22 @@ describe('JobsService', () => {
     });
   });
 
+  describe('findByProfessional', () => {
+    it('deve retornar os serviços aceitos por um profissional específico', async () => {
+      const mockJobs = [{ id: '1', description: 'Limpeza de calha' }];
+      mockJobRepository.find.mockResolvedValue(mockJobs);
+
+      const result = await service.findByProfessional('prof-123');
+
+      expect(mockJobRepository.find).toHaveBeenCalledWith({
+        where: { professional: { id: 'prof-123' } },
+        relations: ['client', 'professional'],
+        order: { createdAt: 'DESC' },
+      });
+      expect(result).toEqual(mockJobs);
+    });
+  });
+
   describe('cancelJob', () => {
     const mockJobId = 'job-123';
     const mockClientId = 'client-123';

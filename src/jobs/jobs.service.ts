@@ -43,6 +43,14 @@ export class JobsService {
     });
   }
 
+  async findByProfessional(userId: string) {
+    return this.jobRepository.find({
+      where: { professional: { id: userId } },
+      relations: ['client', 'professional'],
+      order: { createdAt: 'DESC' },
+    });
+  }
+
   async findNearbyJobs(
     latitude: number,
     longitude: number,

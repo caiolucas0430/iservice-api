@@ -62,4 +62,10 @@ export class JobsController {
   async acceptJob(@Param('id') id: string, @Req() req: AuthRequest) {
     return this.jobsService.acceptJob(id, req.user.id);
   }
+
+  @Get('my-services')
+  @Roles(RoleName.PROFESSIONAL)
+  findMyServices(@Req() req: AuthRequest) {
+    return this.jobsService.findByProfessional(req.user.id);
+  }
 }
