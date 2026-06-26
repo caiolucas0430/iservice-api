@@ -8,6 +8,7 @@ import { RolesModule } from './roles/roles.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { JobsModule } from './jobs/jobs.module';
 import { WorkersModule } from './workers/workers.module';
+import { ReviewsModule } from './reviews/reviews.module';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { WorkersModule } from './workers/workers.module';
     RolesModule,
     JobsModule,
     WorkersModule,
+    ReviewsModule,
   ],
   providers: [
     {
