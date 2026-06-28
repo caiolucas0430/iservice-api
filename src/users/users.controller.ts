@@ -1,8 +1,12 @@
-import { Controller, Patch, UseGuards, Body, Req, Get } from '@nestjs/common';
+import { Controller, Patch, UseGuards, Body, Req, Get, Post, Param, UseInterceptors, UploadedFile, UploadedFiles } from '@nestjs/common';
+import { FileInterceptor, FileFieldsInterceptor } from '@nestjs/platform-express';
 import { UsersService } from './users.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { UserResponseDto } from './dto/user-response.dto';
+import { UpdatePortfolioDto } from './dto/update-portfolio.dto';
+import { CreatePortfolioItemDto } from './dto/create-portfolio-item.dto';
+import { CreateCertificateDto } from './dto/create-certificate.dto';
 
 interface RequestWithUser {
   user: {
@@ -29,4 +33,47 @@ export class UsersController {
   async getMe(@Req() req: RequestWithUser): Promise<UserResponseDto> {
     return this.usersService.findMe(req.user.id);
   }
+
+  @Get('professionals/:id/portfolio')
+  async getPortfolio(@Param('id') id: string) {
+    return this.usersService.getPortfolio(id);
+  }
+
+  @Patch('me/portfolio')
+  @UseGuards(JwtAuthGuard)
+  @UseInterceptors(FileFieldsInterceptor([
+    { name: 'avatar', maxCount: 1 },
+    { name: 'cover', maxCount: 1 },
+  ]))
+  async updatePortfolio(
+    @Req() req: RequestWithUser,
+    @Body() updatePortfolioDto: UpdatePortfolioDto,
+    @UploadedFiles() files: { avatar?: any[], cover?: any[] },
+  ) {
+    const avatarFile = files?.avatar?.[0];
+    const coverFile = files?.cover?.[0];
+    
+    return this.usersService.updatePortfolio(req.user.id, updatePortfolioDto, avatarFile, coverFile);
+  }
+
+  @Post('me/portfolio/items')
+  @UseGuards(JwtAuthGuard)
+  @UseInterceptors(FileInterceptor('image'))
+  async addPortfolioItem(
+    @Req() req: RequestWithUser,
+    @Body() createPortfolioItemDto: CreatePortfolioItemDto,
+    @UploadedFile() image: any,
+  ) {
+    return this.usersService.addPortfolioItem(req.user.id, createPortfolioItemDto, image);
+  }
+
+  @Post('me/certificates')
+  @UseGuards(JwtAuthGuard)
+  async addCertificate(
+    @Req() req: RequestWithUser,
+    @Body() createCertificateDto: CreateCertificateDto,
+  ) {
+    return this.usersService.addCertificate(req.user.id, createCertificateDto);
+  }
 }
+

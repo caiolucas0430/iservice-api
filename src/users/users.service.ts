@@ -14,13 +14,29 @@ import { UserResponseDto } from './dto/user-response.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { Profile } from './entities/profile.entity';
 import { RegisterDto } from '../auth/dto/register.dto';
+import { Certificate } from './entities/certificate.entity';
+import { PortfolioItem } from './entities/portfolio-item.entity';
+import { UploadService } from '../upload/upload.service';
+import { ReviewsService } from '../reviews/reviews.service';
+import { UpdatePortfolioDto } from './dto/update-portfolio.dto';
+import { CreatePortfolioItemDto } from './dto/create-portfolio-item.dto';
+import { CreateCertificateDto } from './dto/create-certificate.dto';
+import { Job, JobStatus } from '../jobs/entities/job.entity';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
+    @InjectRepository(Certificate)
+    private certificateRepository: Repository<Certificate>,
+    @InjectRepository(PortfolioItem)
+    private portfolioItemRepository: Repository<PortfolioItem>,
+    @InjectRepository(Job)
+    private jobRepository: Repository<Job>,
     private rolesService: RolesService,
+    private uploadService: UploadService,
+    private reviewsService: ReviewsService,
   ) {}
 
   async buscarOuCriarSocial(perfil: DadosPerfilSocial): Promise<User> {
@@ -154,5 +170,124 @@ export class UsersService {
     }
 
     return UserResponseDto.fromEntity(user);
+  }
+
+  async getPortfolio(id: string) {
+    const user = await this.userRepository.findOne({
+      where: { id },
+      relations: ['profile', 'certificates', 'portfolioItems', 'roles'],
+    });
+
+    if (!user) throw new NotFoundException('Usuário não encontrado');
+
+    const reviewsStats = await this.reviewsService.getReviewsByUser(id);
+    const completedJobsCount = await this.jobRepository.count({
+      where: {
+        professional: { id },
+        status: JobStatus.COMPLETED,
+      },
+    });
+
+    const highlights = user.profile?.highlights || {};
+    highlights.completedJobs = completedJobsCount;
+
+    return {
+      id: user.id,
+      name: `${user.firstName} ${user.lastName}`,
+      roleTitle: user.profile?.roleTitle || 'Profissional',
+      bio: user.profile?.bio || null,
+      avatarUrl: user.profile?.photoUrl || user.picture || null,
+      coverUrl: user.profile?.coverUrl || null,
+      rating: reviewsStats.averageRating,
+      reviewsCount: reviewsStats.totalReviews,
+      highlights,
+      certificates: user.certificates || [],
+      portfolioItems: user.portfolioItems || [],
+    };
+  }
+
+  async updatePortfolio(
+    userId: string,
+    dto: UpdatePortfolioDto,
+    avatarFile?: any,
+    coverFile?: any,
+  ) {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      relations: ['profile'],
+    });
+
+    if (!user) throw new NotFoundException('Usuário não encontrado');
+
+    if (!user.profile) {
+      user.profile = new Profile();
+    }
+
+    if (avatarFile) {
+      const avatarUrl = await this.uploadService.uploadFile(avatarFile);
+      user.profile.photoUrl = avatarUrl;
+    }
+
+    if (coverFile) {
+      const coverUrl = await this.uploadService.uploadFile(coverFile);
+      user.profile.coverUrl = coverUrl;
+    }
+
+    if (dto.roleTitle !== undefined) user.profile.roleTitle = dto.roleTitle;
+    if (dto.bio !== undefined) user.profile.bio = dto.bio;
+    if (dto.highlights !== undefined) user.profile.highlights = dto.highlights;
+
+    await this.userRepository.save(user);
+
+    return this.getPortfolio(userId);
+  }
+
+  async addPortfolioItem(
+    userId: string,
+    dto: CreatePortfolioItemDto,
+    image?: any,
+  ) {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      relations: ['portfolioItems'],
+    });
+
+    if (!user) throw new NotFoundException('Usuário não encontrado');
+
+    let imageUrl = dto.imageUrl;
+    if (image) {
+      imageUrl = await this.uploadService.uploadFile(image);
+    }
+
+    const newItem = this.portfolioItemRepository.create({
+      title: dto.title,
+      description: dto.description,
+      imageUrl,
+      user,
+    });
+
+    await this.portfolioItemRepository.save(newItem);
+
+    return newItem;
+  }
+
+  async addCertificate(userId: string, dto: CreateCertificateDto) {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      relations: ['certificates'],
+    });
+
+    if (!user) throw new NotFoundException('Usuário não encontrado');
+
+    const newCertificate = this.certificateRepository.create({
+      title: dto.title,
+      description: dto.description,
+      icon: dto.icon,
+      user,
+    });
+
+    await this.certificateRepository.save(newCertificate);
+
+    return newCertificate;
   }
 }

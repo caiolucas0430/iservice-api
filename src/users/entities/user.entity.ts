@@ -10,6 +10,8 @@ import { BaseEntity } from '../../common/entities/base.entity';
 import { Role } from '../../roles/entities/role.entity';
 import { Profile } from './profile.entity';
 import { Job } from '../../jobs/entities/job.entity';
+import { Certificate } from './certificate.entity';
+import { PortfolioItem } from './portfolio-item.entity';
 
 export enum Provider {
   LOCAL = 'local',
@@ -82,4 +84,10 @@ export class User extends BaseEntity {
 
   @OneToMany(() => Job, (job) => job.professional)
   acceptedJobs: Job[];
+
+  @OneToMany(() => Certificate, (certificate) => certificate.user, { cascade: true })
+  certificates: Certificate[];
+
+  @OneToMany(() => PortfolioItem, (portfolioItem) => portfolioItem.user, { cascade: true })
+  portfolioItems: PortfolioItem[];
 }

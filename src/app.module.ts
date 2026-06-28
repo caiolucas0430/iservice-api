@@ -9,6 +9,7 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { JobsModule } from './jobs/jobs.module';
 import { WorkersModule } from './workers/workers.module';
 import { ReviewsModule } from './reviews/reviews.module';
+import { UploadModule } from './upload/upload.module';
 
 @Module({
   imports: [

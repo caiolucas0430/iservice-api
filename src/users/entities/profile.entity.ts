@@ -26,6 +26,15 @@ export class Profile {
   @Column({ nullable: true })
   photoUrl: string;
 
+  @Column({ nullable: true })
+  roleTitle: string;
+
+  @Column({ nullable: true })
+  coverUrl: string;
+
+  @Column({ type: 'jsonb', nullable: true })
+  highlights: any;
+
   @OneToOne(() => User, (user) => user.profile, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'user_id' })
   user: User;
