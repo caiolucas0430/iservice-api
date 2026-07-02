@@ -22,7 +22,7 @@ import { UserResponseDto } from './dto/user-response.dto';
 import { UpdatePortfolioDto } from './dto/update-portfolio.dto';
 import { CreatePortfolioItemDto } from './dto/create-portfolio-item.dto';
 import { CreateCertificateDto } from './dto/create-certificate.dto';
-import { IFile } from '../common/interfaces/file.interface';
+import type { IFile } from '../common/interfaces/file.interface';
 
 interface RequestWithUser {
   user: {

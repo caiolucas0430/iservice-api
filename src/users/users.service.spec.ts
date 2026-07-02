@@ -7,6 +7,7 @@ import { PortfolioItem } from './entities/portfolio-item.entity';
 import { RolesService } from '../roles/roles.service';
 import { UploadService } from '../upload/upload.service';
 import { ReviewsService } from '../reviews/reviews.service';
+import { Job } from '../jobs/entities/job.entity';
 
 describe('UsersService', () => {
   let service: UsersService;
@@ -18,6 +19,7 @@ describe('UsersService', () => {
         { provide: getRepositoryToken(User), useValue: {} },
         { provide: getRepositoryToken(Certificate), useValue: {} },
         { provide: getRepositoryToken(PortfolioItem), useValue: {} },
+        { provide: getRepositoryToken(Job), useValue: {} },
         { provide: RolesService, useValue: {} },
         { provide: UploadService, useValue: {} },
         { provide: ReviewsService, useValue: {} },
