@@ -3,6 +3,12 @@ import { INestApplication } from '@nestjs/common';
 import { WorkersModule } from './workers.module';
 import request from 'supertest';
 
+interface WorkerResponse {
+  id: number;
+  name: string;
+  role: string;
+}
+
 describe('Workers (e2e)', () => {
   let app: INestApplication;
   let workerId: number;
@@ -17,13 +23,13 @@ describe('Workers (e2e)', () => {
   });
 
   it('POST /workers - criar worker', async () => {
-    const response = await request(app.getHttpServer())
+    const response = (await request(app.getHttpServer())
       .post('/workers')
       .send({
         name: 'João',
         role: 'Pedreiro',
       })
-      .expect(201);
+      .expect(201)) as { body: WorkerResponse };
 
     workerId = response.body.id;
 
@@ -41,20 +47,20 @@ describe('Workers (e2e)', () => {
   });
 
   it('GET /workers/:id - buscar worker', async () => {
-    const response = await request(app.getHttpServer())
+    const response = (await request(app.getHttpServer())
       .get(`/workers/${workerId}`)
-      .expect(200);
+      .expect(200)) as { body: WorkerResponse };
 
     expect(response.body.id).toBe(workerId);
   });
 
   it('PATCH /workers/:id - atualizar worker', async () => {
-    const response = await request(app.getHttpServer())
+    const response = (await request(app.getHttpServer())
       .patch(`/workers/${workerId}`)
       .send({
         role: 'Eletricista',
       })
-      .expect(200);
+      .expect(200)) as { body: WorkerResponse };
 
     expect(response.body.role).toBe('Eletricista');
   });
