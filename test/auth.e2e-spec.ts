@@ -28,7 +28,7 @@ describe('Fluxo de Autenticação e Autorização (e2e)', () => {
     });
   });
 
-  it('/auth/login (POST) - Deve retornar status de sucesso e um access_token válido', async () => {
+  it('/auth/login (POST) - Deve retornar status de sucesso e um token válido', async () => {
     const credenciaisDeLogin = {
       email: emailUnico,
       password: senhaTeste,
@@ -40,10 +40,10 @@ describe('Fluxo de Autenticação e Autorização (e2e)', () => {
 
     expect(response.status).toBeGreaterThanOrEqual(200);
     expect(response.status).toBeLessThan(300);
-    expect(response.body).toHaveProperty('access_token');
+    expect(response.body).toHaveProperty('token');
 
-    const responseBody = response.body as { access_token: string };
-    jwtToken = responseBody.access_token;
+    const responseBody = response.body as { token: string };
+    jwtToken = responseBody.token;
   });
 
   describe('Proteção de Rotas com JwtAuthGuard', () => {

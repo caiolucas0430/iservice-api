@@ -2,6 +2,7 @@ import {
   Injectable,
   ConflictException,
   NotFoundException,
+  BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -23,6 +24,8 @@ import { CreatePortfolioItemDto } from './dto/create-portfolio-item.dto';
 import { CreateCertificateDto } from './dto/create-certificate.dto';
 import { Job, JobStatus } from '../jobs/entities/job.entity';
 import { IFile } from '../common/interfaces/file.interface';
+import { ProfileMessages } from './users.messages';
+import { SWITCHABLE_ROLES } from './dto/switch-role.dto';
 
 @Injectable()
 export class UsersService {
@@ -157,7 +160,69 @@ export class UsersService {
 
     await this.userRepository.save(user);
 
-    return UserResponseDto.fromEntity(user);
+    // TA02.01 / MSG01 - retorna mensagem de sucesso junto com o usuário.
+    return {
+      message: ProfileMessages.UPDATE_SUCCESS,
+      user: UserResponseDto.fromEntity(user),
+    };
+  }
+
+  /**
+   * US02 - RN02 / RN06 / TA02.02
+   * Alterna o tipo de conta do usuário entre USER e PROFESSIONAL.
+   * - Para PROFESSIONAL: adiciona a role (mantendo USER como base).
+   * - Para USER: remove a role PROFESSIONAL (rebaixa para cliente comum).
+   * A alteração é persistida imediatamente e reflete nas permissões (RolesGuard)
+   * na próxima leitura do token/usuário.
+   */
+  async switchRole(userId: string, targetRole: RoleName) {
+    if (!SWITCHABLE_ROLES.includes(targetRole)) {
+      throw new BadRequestException('Tipo de conta inválido');
+    }
+
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      relations: ['roles', 'profile'],
+    });
+
+    if (!user) throw new NotFoundException('Usuário não encontrado');
+
+    if (!user.roles) user.roles = [];
+
+    const roleNames = user.roles.map((role) => role.name);
+    const jaEProfissional = roleNames.includes(RoleName.PROFESSIONAL);
+
+    if (targetRole === RoleName.PROFESSIONAL) {
+      if (!jaEProfissional) {
+        const roleProfissional = await this.rolesService.findByName(
+          RoleName.PROFESSIONAL,
+        );
+
+        if (!roleProfissional) {
+          throw new NotFoundException('Perfil PROFESSIONAL não encontrado');
+        }
+
+        user.roles.push(roleProfissional);
+      }
+    } else {
+      // Rebaixa para USER: remove PROFESSIONAL, garante que USER exista.
+      user.roles = user.roles.filter(
+        (role) => role.name !== (RoleName.PROFESSIONAL as string),
+      );
+
+      if (!roleNames.includes(RoleName.USER)) {
+        const roleUser = await this.rolesService.findByName(RoleName.USER);
+        if (roleUser) user.roles.push(roleUser);
+      }
+    }
+
+    await this.userRepository.save(user);
+
+    // TA02.02 / MSG02 - confirma a troca e devolve o estado atualizado.
+    return {
+      message: ProfileMessages.ROLE_SWITCH_SUCCESS,
+      user: UserResponseDto.fromEntity(user),
+    };
   }
 
   async findMe(id: string): Promise<UserResponseDto> {
