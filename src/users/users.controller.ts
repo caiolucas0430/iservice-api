@@ -22,6 +22,7 @@ import { UserResponseDto } from './dto/user-response.dto';
 import { UpdatePortfolioDto } from './dto/update-portfolio.dto';
 import { CreatePortfolioItemDto } from './dto/create-portfolio-item.dto';
 import { CreateCertificateDto } from './dto/create-certificate.dto';
+import { SwitchRoleDto } from './dto/switch-role.dto';
 import type { IFile } from '../common/interfaces/file.interface';
 
 interface RequestWithUser {
@@ -42,6 +43,15 @@ export class UsersController {
     @Body() updateProfileDto: UpdateProfileDto,
   ) {
     return this.usersService.updateProfile(req.user.id, updateProfileDto);
+  }
+
+  @Patch('me/role')
+  @UseGuards(JwtAuthGuard)
+  async switchRole(
+    @Req() req: RequestWithUser,
+    @Body() switchRoleDto: SwitchRoleDto,
+  ) {
+    return this.usersService.switchRole(req.user.id, switchRoleDto.role);
   }
 
   @Get('me')
