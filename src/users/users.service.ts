@@ -33,14 +33,14 @@ export class UsersService {
     @InjectRepository(User)
     private userRepository: Repository<User>,
     @InjectRepository(Certificate)
-    private certificateRepository: Repository<Certificate>,
+    private readonly certificateRepository: Repository<Certificate>,
     @InjectRepository(PortfolioItem)
-    private portfolioItemRepository: Repository<PortfolioItem>,
+    private readonly portfolioItemRepository: Repository<PortfolioItem>,
     @InjectRepository(Job)
-    private jobRepository: Repository<Job>,
+    private readonly jobRepository: Repository<Job>,
     private rolesService: RolesService,
-    private uploadService: UploadService,
-    private reviewsService: ReviewsService,
+    private readonly uploadService: UploadService,
+    private readonly reviewsService: ReviewsService,
   ) {}
 
   async buscarOuCriarSocial(perfil: DadosPerfilSocial): Promise<User> {
@@ -189,8 +189,8 @@ export class UsersService {
 
     if (!user.roles) user.roles = [];
 
-    const roleNames = user.roles.map((role) => role.name);
-    const jaEProfissional = roleNames.includes(RoleName.PROFESSIONAL);
+    const roleNames = new Set(user.roles.map((role) => role.name));
+    const jaEProfissional = roleNames.has(RoleName.PROFESSIONAL as string);
 
     if (targetRole === RoleName.PROFESSIONAL) {
       if (!jaEProfissional) {
@@ -210,7 +210,7 @@ export class UsersService {
         (role) => role.name !== (RoleName.PROFESSIONAL as string),
       );
 
-      if (!roleNames.includes(RoleName.USER)) {
+      if (!roleNames.has(RoleName.USER as string)) {
         const roleUser = await this.rolesService.findByName(RoleName.USER);
         if (roleUser) user.roles.push(roleUser);
       }

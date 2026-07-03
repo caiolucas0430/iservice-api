@@ -158,7 +158,7 @@ export class JobsService {
       );
     }
 
-    if (!job.professional || job.professional.id !== professionalId) {
+    if (job.professional?.id !== professionalId) {
       throw new ForbiddenException(
         'You do not have permission to complete this job',
       );
