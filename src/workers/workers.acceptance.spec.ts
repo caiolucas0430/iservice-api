@@ -11,6 +11,7 @@ interface WorkerResponse {
 
 describe('Workers (e2e)', () => {
   let app: INestApplication;
+  let server: Parameters<typeof request>[0];
   let workerId: number;
 
   beforeAll(async () => {
@@ -20,10 +21,12 @@ describe('Workers (e2e)', () => {
 
     app = moduleFixture.createNestApplication();
     await app.init();
+
+    server = app.getHttpServer() as Parameters<typeof request>[0];
   });
 
   it('POST /workers - criar worker', async () => {
-    const response = (await request(app.getHttpServer())
+    const response = (await request(server)
       .post('/workers')
       .send({
         name: 'João',
@@ -39,15 +42,13 @@ describe('Workers (e2e)', () => {
   });
 
   it('GET /workers - listar workers', async () => {
-    const response = await request(app.getHttpServer())
-      .get('/workers')
-      .expect(200);
+    const response = await request(server).get('/workers').expect(200);
 
     expect(Array.isArray(response.body)).toBe(true);
   });
 
   it('GET /workers/:id - buscar worker', async () => {
-    const response = (await request(app.getHttpServer())
+    const response = (await request(server)
       .get(`/workers/${workerId}`)
       .expect(200)) as { body: WorkerResponse };
 
@@ -55,7 +56,7 @@ describe('Workers (e2e)', () => {
   });
 
   it('PATCH /workers/:id - atualizar worker', async () => {
-    const response = (await request(app.getHttpServer())
+    const response = (await request(server)
       .patch(`/workers/${workerId}`)
       .send({
         role: 'Eletricista',
@@ -66,9 +67,7 @@ describe('Workers (e2e)', () => {
   });
 
   it('DELETE /workers/:id - remover worker', async () => {
-    await request(app.getHttpServer())
-      .delete(`/workers/${workerId}`)
-      .expect(200);
+    await request(server).delete(`/workers/${workerId}`).expect(200);
   });
 
   afterAll(async () => {

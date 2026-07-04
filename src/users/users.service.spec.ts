@@ -1,5 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { UsersService } from './users.service';
 import { User } from './entities/user.entity';
@@ -30,6 +34,9 @@ describe('UsersService - US02 (Manter Perfil)', () => {
   };
   const rolesService = { findByName: jest.fn() };
 
+  const certificateRepository = { create: jest.fn(), save: jest.fn() };
+  const portfolioItemRepository = { create: jest.fn(), save: jest.fn() };
+
   const makeRole = (name: RoleName): Role => ({ name }) as unknown as Role;
 
   beforeEach(async () => {
@@ -39,12 +46,31 @@ describe('UsersService - US02 (Manter Perfil)', () => {
       providers: [
         UsersService,
         { provide: getRepositoryToken(User), useValue: userRepository },
-        { provide: getRepositoryToken(Certificate), useValue: {} },
-        { provide: getRepositoryToken(PortfolioItem), useValue: {} },
-        { provide: getRepositoryToken(Job), useValue: {} },
+        {
+          provide: getRepositoryToken(Certificate),
+          useValue: certificateRepository,
+        },
+        {
+          provide: getRepositoryToken(PortfolioItem),
+          useValue: portfolioItemRepository,
+        },
+        {
+          provide: getRepositoryToken(Job),
+          useValue: { count: jest.fn().mockResolvedValue(0) },
+        },
         { provide: RolesService, useValue: rolesService },
-        { provide: UploadService, useValue: {} },
-        { provide: ReviewsService, useValue: {} },
+        {
+          provide: UploadService,
+          useValue: { uploadFile: jest.fn().mockResolvedValue('url-mock') },
+        },
+        {
+          provide: ReviewsService,
+          useValue: {
+            getReviewsByUser: jest
+              .fn()
+              .mockResolvedValue({ averageRating: 0, totalReviews: 0 }),
+          },
+        },
       ],
     }).compile();
 
@@ -145,9 +171,8 @@ describe('UsersService - US02 (Manter Perfil)', () => {
       // Não deve consultar/duplicar a role
       expect(rolesService.findByName).not.toHaveBeenCalled();
       expect(
-        result.user.roles.filter(
-          (r) => r === (RoleName.PROFESSIONAL as string),
-        ).length,
+        result.user.roles.filter((r) => r === (RoleName.PROFESSIONAL as string))
+          .length,
       ).toBe(1);
     });
 
@@ -164,6 +189,93 @@ describe('UsersService - US02 (Manter Perfil)', () => {
       await expect(
         service.switchRole('inexistente', RoleName.PROFESSIONAL),
       ).rejects.toBeInstanceOf(NotFoundException);
+    });
+  });
+
+  /**
+   * Testes Complementares - Cenários de Sucesso e Erro
+   * Objetivo: Aumentar a cobertura do arquivo users.service.ts
+   */
+  describe('Cenários Adicionais de Cobertura (Sucesso e Erro)', () => {
+    describe('createLocalUser', () => {
+      it('deve criar um usuário com sucesso (Sucesso)', async () => {
+        userRepository.findOne.mockResolvedValue(null);
+        rolesService.findByName.mockResolvedValue(makeRole(RoleName.USER));
+
+        const mockUser = { id: 'novo_id', email: 'teste@teste.com' };
+        jest
+          .spyOn(User, 'createLocal')
+          .mockReturnValue(mockUser as unknown as User);
+        userRepository.save.mockResolvedValue(mockUser);
+
+        const result = await service.createLocalUser({
+          email: 'teste@teste.com',
+          password: '123',
+          firstName: 'A',
+          lastName: 'B',
+        });
+        expect(result.id).toBe('novo_id');
+      });
+
+      it('deve disparar erro se o e-mail já existir (Erro)', async () => {
+        userRepository.findOne.mockResolvedValue({ id: 'existente' });
+        await expect(
+          service.createLocalUser({
+            email: 'teste@teste.com',
+            password: '123',
+            firstName: 'A',
+            lastName: 'B',
+          }),
+        ).rejects.toThrow(ConflictException);
+      });
+    });
+
+    describe('updatePortfolio', () => {
+      it('deve atualizar o portfólio (Sucesso)', async () => {
+        userRepository.findOne.mockResolvedValue({
+          id: 'u1',
+          firstName: 'A',
+          lastName: 'B',
+          profile: {},
+        });
+        await service.updatePortfolio('u1', { roleTitle: 'Desenvolvedor' });
+        expect(userRepository.save).toHaveBeenCalled();
+      });
+
+      it('deve disparar erro se o usuário não for achado (Erro)', async () => {
+        userRepository.findOne.mockResolvedValue(null);
+        await expect(service.updatePortfolio('invalido', {})).rejects.toThrow(
+          NotFoundException,
+        );
+      });
+    });
+
+    describe('addPortfolioItem e addCertificate', () => {
+      it('deve adicionar um novo item ao portfólio (Sucesso)', async () => {
+        userRepository.findOne.mockResolvedValue({ id: 'u1' });
+        portfolioItemRepository.create.mockReturnValue({ title: 'Projeto' });
+        portfolioItemRepository.save.mockResolvedValue({ id: 'item1' });
+
+        await service.addPortfolioItem('u1', {
+          title: 'Projeto',
+          description: 'Desc',
+          imageUrl: '',
+        });
+        expect(portfolioItemRepository.save).toHaveBeenCalled();
+      });
+
+      it('deve adicionar um novo certificado (Sucesso)', async () => {
+        userRepository.findOne.mockResolvedValue({ id: 'u1' });
+        certificateRepository.create.mockReturnValue({ title: 'AWS' });
+        certificateRepository.save.mockResolvedValue({ id: 'cert1' });
+
+        await service.addCertificate('u1', {
+          title: 'AWS',
+          description: 'Cloud',
+          icon: 'aws',
+        });
+        expect(certificateRepository.save).toHaveBeenCalled();
+      });
     });
   });
 });

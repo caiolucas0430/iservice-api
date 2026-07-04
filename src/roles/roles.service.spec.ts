@@ -55,7 +55,9 @@ describe('RolesService', () => {
   describe('onApplicationBootstrap (seeder)', () => {
     it('cria as três roles base quando nenhuma existe', async () => {
       mockRoleRepository.findOne.mockResolvedValue(null);
-      mockRoleRepository.create.mockImplementation((data: Partial<Role>) => data);
+      mockRoleRepository.create.mockImplementation(
+        (data: Partial<Role>) => data,
+      );
       mockRoleRepository.save.mockResolvedValue(undefined);
 
       await service.onApplicationBootstrap();
@@ -90,10 +92,14 @@ describe('RolesService', () => {
       mockRoleRepository.findOne.mockImplementation(
         ({ where }: { where: { name: RoleName } }) =>
           Promise.resolve(
-            where.name === RoleName.ADMIN ? ({ name: RoleName.ADMIN } as Role) : null,
+            where.name === RoleName.ADMIN
+              ? ({ name: RoleName.ADMIN } as Role)
+              : null,
           ),
       );
-      mockRoleRepository.create.mockImplementation((data: Partial<Role>) => data);
+      mockRoleRepository.create.mockImplementation(
+        (data: Partial<Role>) => data,
+      );
       mockRoleRepository.save.mockResolvedValue(undefined);
 
       await service.onApplicationBootstrap();
