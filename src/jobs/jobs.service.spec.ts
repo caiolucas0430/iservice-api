@@ -28,6 +28,7 @@ describe('JobsService', () => {
     create: jest.fn(),
     save: jest.fn(),
     find: jest.fn(),
+    findOne: jest.fn(),
     createQueryBuilder: jest.fn().mockReturnValue(mockQueryBuilder),
   };
 
@@ -291,6 +292,14 @@ describe('JobsService', () => {
     const mockClientId = 'client-123';
     const mockProfessionalId = 'prof-123';
 
+    it('deve lançar NotFoundException se o job não existir', async () => {
+      mockJobRepository.findOne.mockResolvedValue(null);
+
+      await expect(
+        service.acceptJob(mockJobId, mockProfessionalId),
+      ).rejects.toThrow(NotFoundException);
+    });
+
     it('deve aceitar o job com sucesso', async () => {
       const mockJob = {
         id: mockJobId,
@@ -300,7 +309,7 @@ describe('JobsService', () => {
       };
       const mockProfessionalUser = { id: mockProfessionalId, name: 'Pro' };
 
-      mockJobRepository.findOne = jest.fn().mockResolvedValue(mockJob);
+      mockJobRepository.findOne.mockResolvedValue(mockJob);
       mockUsersService.findById.mockResolvedValue(mockProfessionalUser);
       mockJobRepository.save.mockResolvedValue({
         ...mockJob,
@@ -329,7 +338,7 @@ describe('JobsService', () => {
         professional: null,
       };
 
-      mockJobRepository.findOne = jest.fn().mockResolvedValue(mockJob);
+      mockJobRepository.findOne.mockResolvedValue(mockJob);
 
       await expect(service.acceptJob(mockJobId, mockClientId)).rejects.toThrow(
         ConflictException,
@@ -344,7 +353,7 @@ describe('JobsService', () => {
         professional: null,
       };
 
-      mockJobRepository.findOne = jest.fn().mockResolvedValue(mockJob);
+      mockJobRepository.findOne.mockResolvedValue(mockJob);
 
       await expect(
         service.acceptJob(mockJobId, mockProfessionalId),
@@ -359,7 +368,7 @@ describe('JobsService', () => {
         professional: { id: 'outro-prof-123' },
       };
 
-      mockJobRepository.findOne = jest.fn().mockResolvedValue(mockJob);
+      mockJobRepository.findOne.mockResolvedValue(mockJob);
 
       await expect(
         service.acceptJob(mockJobId, mockProfessionalId),

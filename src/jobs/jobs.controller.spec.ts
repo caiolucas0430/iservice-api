@@ -12,6 +12,10 @@ describe('JobsController', () => {
     create: jest.fn(),
     findByClient: jest.fn(),
     findNearbyJobs: jest.fn(),
+    cancelJob: jest.fn(),
+    acceptJob: jest.fn(),
+    findByProfessional: jest.fn(),
+    completeJob: jest.fn(),
   };
 
   const mockRequest = {
@@ -106,6 +110,61 @@ describe('JobsController', () => {
         -37.0944,
         undefined,
       );
+    });
+  });
+
+  describe('cancelJob', () => {
+    it('deve chamar service.cancelJob com o id do serviço e do usuário', async () => {
+      const mockResult = { success: true };
+
+      mockJobsService.cancelJob.mockResolvedValue(mockResult);
+
+      const result = await controller.cancelJob('10', mockRequest as never);
+
+      expect(mockJobsService.cancelJob).toHaveBeenCalledWith('10', 1);
+      expect(result).toEqual(mockResult);
+    });
+  });
+
+  describe('acceptJob', () => {
+    it('deve chamar service.acceptJob com o id do serviço e do profissional', async () => {
+      const mockResult = { success: true };
+
+      mockJobsService.acceptJob.mockResolvedValue(mockResult);
+
+      const result = await controller.acceptJob('10', mockRequest as never);
+
+      expect(mockJobsService.acceptJob).toHaveBeenCalledWith('10', 1);
+      expect(result).toEqual(mockResult);
+    });
+  });
+
+  describe('findMyServices', () => {
+    it('deve chamar service.findByProfessional passando o ID do profissional logado', async () => {
+      const mockServices = [
+        { id: 1, description: 'Troca de chuveiro' },
+        { id: 2, description: 'Instalação de tomada' },
+      ];
+
+      mockJobsService.findByProfessional.mockResolvedValue(mockServices);
+
+      const result = await controller.findMyServices(mockRequest as never);
+
+      expect(mockJobsService.findByProfessional).toHaveBeenCalledWith(1);
+      expect(result).toEqual(mockServices);
+    });
+  });
+
+  describe('completeJob', () => {
+    it('deve chamar service.completeJob com o id do serviço e do profissional', async () => {
+      const mockResult = { success: true };
+
+      mockJobsService.completeJob.mockResolvedValue(mockResult);
+
+      const result = await controller.completeJob('10', mockRequest as never);
+
+      expect(mockJobsService.completeJob).toHaveBeenCalledWith('10', 1);
+      expect(result).toEqual(mockResult);
     });
   });
 });
