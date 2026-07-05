@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/unbound-method */
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
 import { UsersService } from '../../users/users.service';
@@ -48,10 +50,17 @@ describe('GoogleStrategy', () => {
     };
 
     const mockUser = { id: 'user-id', email: 'john.doe@gmail.com' };
-    jest.spyOn(usersService, 'buscarOuCriarSocial').mockResolvedValue(mockUser as any);
+    jest
+      .spyOn(usersService, 'buscarOuCriarSocial')
+      .mockResolvedValue(mockUser as any);
 
     const done = jest.fn();
-    await strategy.validate('accessToken', 'refreshToken', mockProfile as Profile, done);
+    await strategy.validate(
+      'accessToken',
+      'refreshToken',
+      mockProfile as Profile,
+      done,
+    );
 
     expect(usersService.buscarOuCriarSocial).toHaveBeenCalledWith({
       email: 'john.doe@gmail.com',
@@ -71,10 +80,17 @@ describe('GoogleStrategy', () => {
     };
 
     const mockError = new Error('Database error');
-    jest.spyOn(usersService, 'buscarOuCriarSocial').mockRejectedValue(mockError);
+    jest
+      .spyOn(usersService, 'buscarOuCriarSocial')
+      .mockRejectedValue(mockError);
 
     const done = jest.fn();
-    await strategy.validate('accessToken', 'refreshToken', mockProfile as Profile, done);
+    await strategy.validate(
+      'accessToken',
+      'refreshToken',
+      mockProfile as Profile,
+      done,
+    );
 
     expect(done).toHaveBeenCalledWith(mockError, false);
   });

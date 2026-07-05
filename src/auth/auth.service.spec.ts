@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/unbound-method */
+
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthService } from './auth.service';
 import { JwtService } from '@nestjs/jwt';
@@ -145,7 +148,9 @@ describe('AuthService', () => {
         email: 'google@example.com',
         provider: Provider.GOOGLE,
       } as unknown as User;
-      jest.spyOn(usersService, 'buscarOuCriarSocial').mockResolvedValue(userMock);
+      jest
+        .spyOn(usersService, 'buscarOuCriarSocial')
+        .mockResolvedValue(userMock);
 
       const result = await service.loginGoogleMobile('google-token');
       expect(result.token).toBe('signed-token');
@@ -165,7 +170,9 @@ describe('AuthService', () => {
       mockVerifyIdToken.mockResolvedValue(ticketMock);
 
       await expect(service.loginGoogleMobile('invalid-token')).rejects.toThrow(
-        new UnauthorizedException('Token do Google inválido ou sem e-mail associado'),
+        new UnauthorizedException(
+          'Token do Google inválido ou sem e-mail associado',
+        ),
       );
     });
   });

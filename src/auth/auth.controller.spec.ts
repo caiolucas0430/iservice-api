@@ -1,3 +1,7 @@
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/unbound-method */
+
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
@@ -63,11 +67,15 @@ describe('AuthController', () => {
   describe('googleAuthMobile', () => {
     it('should call loginGoogleMobile with the token', async () => {
       const expectedResponse = { token: 'jwt-token', user: {} as any };
-      jest.spyOn(authService, 'loginGoogleMobile').mockResolvedValue(expectedResponse);
+      jest
+        .spyOn(authService, 'loginGoogleMobile')
+        .mockResolvedValue(expectedResponse);
 
       const result = await controller.googleAuthMobile('google-token');
       expect(result).toEqual(expectedResponse);
-      expect(authService.loginGoogleMobile).toHaveBeenCalledWith('google-token');
+      expect(authService.loginGoogleMobile).toHaveBeenCalledWith(
+        'google-token',
+      );
     });
   });
 
@@ -80,7 +88,9 @@ describe('AuthController', () => {
         lastName: 'Doe',
       };
       const createdUser = { id: 'new-uuid', email: 'test@example.com' } as any;
-      jest.spyOn(usersService, 'createLocalUser').mockResolvedValue(createdUser);
+      jest
+        .spyOn(usersService, 'createLocalUser')
+        .mockResolvedValue(createdUser);
 
       const result = await controller.register(registerDto);
       expect(result).toEqual(createdUser);

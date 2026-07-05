@@ -41,7 +41,9 @@ describe('RolesGuard', () => {
   });
 
   it('should throw ForbiddenException if user is not present', () => {
-    jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue([RoleName.PROFESSIONAL]);
+    jest
+      .spyOn(reflector, 'getAllAndOverride')
+      .mockReturnValue([RoleName.PROFESSIONAL]);
 
     const context = {
       getHandler: () => {},
@@ -55,7 +57,9 @@ describe('RolesGuard', () => {
   });
 
   it('should throw ForbiddenException if user does not have the required role', () => {
-    jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue([RoleName.PROFESSIONAL]);
+    jest
+      .spyOn(reflector, 'getAllAndOverride')
+      .mockReturnValue([RoleName.PROFESSIONAL]);
 
     const context = {
       getHandler: () => {},
@@ -73,7 +77,9 @@ describe('RolesGuard', () => {
   });
 
   it('should return true if user has the required role', () => {
-    jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue([RoleName.PROFESSIONAL]);
+    jest
+      .spyOn(reflector, 'getAllAndOverride')
+      .mockReturnValue([RoleName.PROFESSIONAL]);
 
     const context = {
       getHandler: () => {},
