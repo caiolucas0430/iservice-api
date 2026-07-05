@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { AppModule } from './../src/app.module';
@@ -9,8 +12,6 @@ describe('Jobs E2E Flow', () => {
   let app: INestApplication;
   let clientToken: string;
   let profToken: string;
-  let clientId: string;
-  let profId: string;
   let jobId: string;
 
   const clientEmail = `client_${Date.now()}@gmail.com`;
@@ -45,7 +46,6 @@ describe('Jobs E2E Flow', () => {
       .post('/auth/login')
       .send({ email: clientEmail, password: senha });
     clientToken = (clientLogin.body as { token: string }).token;
-    clientId = (clientLogin.body as { user: { id: string } }).user.id;
 
     // Register Professional
     await request(app.getHttpServer()).post('/auth/register').send({
@@ -59,7 +59,6 @@ describe('Jobs E2E Flow', () => {
       .post('/auth/login')
       .send({ email: profEmail, password: senha });
     profToken = (profLogin.body as { token: string }).token;
-    profId = (profLogin.body as { user: { id: string } }).user.id;
 
     // Promote Professional user to PROFESSIONAL role
     await request(app.getHttpServer())
@@ -112,7 +111,9 @@ describe('Jobs E2E Flow', () => {
 
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body)).toBe(true);
-    const hasOurJob = (res.body as { id: string }[]).some((j) => j.id === jobId);
+    const hasOurJob = (res.body as { id: string }[]).some(
+      (j) => j.id === jobId,
+    );
     expect(hasOurJob).toBe(true);
   });
 
