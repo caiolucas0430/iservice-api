@@ -1,0 +1,44 @@
+services:
+  db:
+    image: postgis/postgis:latest
+    container_name: iservice_db_prod
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "${DB_PORT_DOCKER:-5432}:5432"
+    volumes:
+      - iservice_db_prod_data:/var/lib/postgresql/data
+    networks:
+      - iservice_network
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: iservice_api_prod
+    restart: always
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - JWT_SECRET=${JWT_SECRET}
+      - PORT=8404
+      - NODE_ENV=production
+    ports:
+      - "8404:8404"
+    depends_on:
+      - db
+    networks:
+      - iservice_network
+
+volumes:
+  iservice_db_prod_data:
+
+networks:
+  iservice_network:
+    driver: bridge
