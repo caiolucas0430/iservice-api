@@ -10,6 +10,7 @@ import { JobsModule } from './jobs/jobs.module';
 import { WorkersModule } from './workers/workers.module';
 import { ReviewsModule } from './reviews/reviews.module';
 import { UploadModule } from './upload/upload.module';
+import { HelpModule } from './help/help.module'; // <- adicionar
 
 @Module({
   imports: [
@@ -46,6 +47,7 @@ import { UploadModule } from './upload/upload.module';
     WorkersModule,
     ReviewsModule,
     UploadModule,
+    HelpModule, // <- adicionar
   ],
   providers: [
     {
