@@ -39,6 +39,9 @@ export class Profile {
   @JoinColumn({ name: 'user_id' })
   user: User;
 
+  @Column({ type: 'boolean', default: false })
+  isOnline: boolean;
+
   @Index({ spatial: true })
   @Column({
     type: 'geography',

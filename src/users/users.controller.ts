@@ -23,6 +23,7 @@ import { UpdatePortfolioDto } from './dto/update-portfolio.dto';
 import { CreatePortfolioItemDto } from './dto/create-portfolio-item.dto';
 import { CreateCertificateDto } from './dto/create-certificate.dto';
 import { SwitchRoleDto } from './dto/switch-role.dto';
+import { UpdateStatusDto } from './dto/update-status.dto';
 import type { IFile } from '../common/interfaces/file.interface';
 
 interface RequestWithUser {
@@ -58,6 +59,15 @@ export class UsersController {
   @UseGuards(JwtAuthGuard)
   async getMe(@Req() req: RequestWithUser): Promise<UserResponseDto> {
     return this.usersService.findMe(req.user.id);
+  }
+
+  @Patch('me/status')
+  @UseGuards(JwtAuthGuard)
+  async updateStatus(
+    @Req() req: RequestWithUser,
+    @Body() dto: UpdateStatusDto,
+  ) {
+    return this.usersService.updateStatus(req.user.id, dto.isOnline);
   }
 
   @Get('professionals/:id/portfolio')

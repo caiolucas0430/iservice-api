@@ -225,6 +225,29 @@ export class UsersService {
     };
   }
 
+  async updateStatus(userId: string, isOnline: boolean) {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      relations: ['profile'],
+    });
+
+    if (!user) {
+      throw new NotFoundException('Usuário não encontrado');
+    }
+
+    if (!user.profile) {
+      user.profile = new Profile();
+    }
+
+    user.profile.isOnline = isOnline;
+    await this.userRepository.save(user);
+
+    return {
+      message: 'Status atualizado com sucesso',
+      isOnline: user.profile.isOnline,
+    };
+  }
+
   async findMe(id: string): Promise<UserResponseDto> {
     const user = await this.userRepository.findOne({
       where: { id },
@@ -272,6 +295,7 @@ export class UsersService {
       highlights,
       certificates: user.certificates || [],
       portfolioItems: user.portfolioItems || [],
+      isOnline: user.profile?.isOnline || false,
     };
   }
 

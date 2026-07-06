@@ -192,6 +192,31 @@ describe('UsersService - US02 (Manter Perfil)', () => {
     });
   });
 
+  describe('updateStatus', () => {
+    it('deve atualizar o status isOnline com sucesso', async () => {
+      const user: Partial<User> = {
+        id: 'u1',
+        profile: { isOnline: false } as Profile,
+      };
+      userRepository.findOne.mockResolvedValue(user);
+
+      const result = await service.updateStatus('u1', true);
+
+      expect(result.message).toBe('Status atualizado com sucesso');
+      expect(result.isOnline).toBe(true);
+      expect(user.profile?.isOnline).toBe(true);
+      expect(userRepository.save).toHaveBeenCalledTimes(1);
+    });
+
+    it('deve lançar NotFoundException se o usuário não for encontrado', async () => {
+      userRepository.findOne.mockResolvedValue(null);
+
+      await expect(service.updateStatus('inexistente', true)).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
+    });
+  });
+
   /**
    * Testes Complementares - Cenários de Sucesso e Erro
    * Objetivo: Aumentar a cobertura do arquivo users.service.ts
