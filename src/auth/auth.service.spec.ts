@@ -1,12 +1,12 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/unbound-method */
-
 import { Test, TestingModule } from '@nestjs/testing';
+import { UnauthorizedException } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
-import { UnauthorizedException } from '@nestjs/common';
 import { User, Provider } from '../users/entities/user.entity';
+import { Role } from '../roles/entities/role.entity';
+import { UserResponseDto } from '../users/dto/user-response.dto';
+import { Profile } from 'src/users/entities/profile.entity';
 
 // Mock google-auth-library
 const mockVerifyIdToken = jest.fn();
@@ -22,34 +22,58 @@ jest.mock('google-auth-library', () => {
 
 describe('AuthService', () => {
   let service: AuthService;
-  let jwtService: JwtService;
-  let usersService: UsersService;
+
+  const jwtService = {
+    sign: jest.fn().mockReturnValue('token-jwt'),
+  } satisfies Partial<JwtService>;
+
+  const usersService: Partial<UsersService> = {
+    validateUser: jest.fn(),
+    buscarOuCriarSocial: jest.fn(),
+  };
+
+  const mockRole: Role = {
+    id: '1',
+    name: 'ADMIN',
+  } as Role;
+
+  const mockProfile = {
+    bio: 'bio',
+    phoneNumber: '999',
+    photoUrl: 'url',
+  } satisfies Partial<Profile>;
+
+  const mockUser: Partial<User> = {
+    id: '1',
+    email: 'teste@email.com',
+    firstName: 'João',
+    lastName: 'Silva',
+    provider: Provider.LOCAL,
+    roles: [mockRole],
+    profile: mockProfile as Profile,
+  };
+
+  const responseDto: UserResponseDto = {
+    id: '1',
+    email: 'teste@email.com',
+    firstName: 'João',
+    lastName: 'Silva',
+    roles: ['ADMIN'],
+    profile: null,
+  };
 
   beforeEach(async () => {
-    mockVerifyIdToken.mockReset();
+    jest.clearAllMocks();
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthService,
-        {
-          provide: JwtService,
-          useValue: {
-            sign: jest.fn().mockReturnValue('signed-token'),
-          },
-        },
-        {
-          provide: UsersService,
-          useValue: {
-            validateUser: jest.fn(),
-            buscarOuCriarSocial: jest.fn(),
-          },
-        },
+        { provide: JwtService, useValue: jwtService },
+        { provide: UsersService, useValue: usersService },
       ],
     }).compile();
 
     service = module.get<AuthService>(AuthService);
-    jwtService = module.get<JwtService>(JwtService);
-    usersService = module.get<UsersService>(UsersService);
   });
 
   it('should be defined', () => {
@@ -57,123 +81,148 @@ describe('AuthService', () => {
   });
 
   describe('generateJwt', () => {
-    it('should generate JWT for a user with roles', () => {
-      const user = {
-        id: 'user-uuid',
-        email: 'test@example.com',
-        firstName: 'John',
-        lastName: 'Doe',
-        roles: [{ name: 'USER' }],
-      } as unknown as User;
+    it('deve gerar JWT corretamente', () => {
+      jwtService.sign.mockReturnValue('token-jwt');
 
-      const result = service.generateJwt(user);
-      expect(result).toEqual({
-        token: 'signed-token',
-        user: expect.objectContaining({
-          id: 'user-uuid',
-          email: 'test@example.com',
-        }),
-      });
+      jest.spyOn(UserResponseDto, 'fromEntity').mockReturnValue(responseDto);
+
+      const result = service.generateJwt(mockUser as User);
+
       expect(jwtService.sign).toHaveBeenCalledWith({
-        sub: 'user-uuid',
-        email: 'test@example.com',
-        roles: ['USER'],
+        sub: '1',
+        email: 'teste@email.com',
+        roles: ['ADMIN'],
+      });
+
+      expect(result).toEqual({
+        token: 'token-jwt',
+        user: responseDto,
       });
     });
 
-    it('should generate JWT for a user without roles', () => {
-      const user = {
-        id: 'user-uuid',
-        email: 'test@example.com',
-        firstName: 'John',
-        lastName: 'Doe',
-        roles: null,
-      } as unknown as User;
+    it('deve gerar JWT sem roles', () => {
+      jwtService.sign.mockReturnValue('token-jwt');
 
-      const result = service.generateJwt(user);
-      expect(result.token).toBe('signed-token');
+      const userNoRoles: Partial<User> = {
+        ...mockUser,
+        roles: undefined,
+      };
+
+      jest.spyOn(UserResponseDto, 'fromEntity').mockReturnValue(responseDto);
+
+      service.generateJwt(userNoRoles as User);
+
       expect(jwtService.sign).toHaveBeenCalledWith({
-        sub: 'user-uuid',
-        email: 'test@example.com',
+        sub: '1',
+        email: 'teste@email.com',
         roles: [],
       });
     });
   });
 
   describe('login', () => {
-    it('should return token and user if credentials are valid', async () => {
-      const user = {
-        id: 'user-uuid',
-        email: 'test@example.com',
-        roles: [],
-      } as unknown as User;
+    it('deve autenticar usuário corretamente', async () => {
+      (usersService.validateUser as jest.Mock).mockResolvedValue(
+        mockUser as User,
+      );
 
-      jest.spyOn(usersService, 'validateUser').mockResolvedValue(user);
+      jwtService.sign.mockReturnValue('token-jwt');
+
+      jest.spyOn(UserResponseDto, 'fromEntity').mockReturnValue(responseDto);
 
       const result = await service.login({
-        email: 'test@example.com',
-        password: 'password',
+        email: 'teste@email.com',
+        password: '123456',
       });
 
-      expect(result.token).toBe('signed-token');
       expect(usersService.validateUser).toHaveBeenCalledWith(
-        'test@example.com',
-        'password',
+        'teste@email.com',
+        '123456',
       );
-    });
 
-    it('should throw UnauthorizedException if credentials are invalid', async () => {
-      jest.spyOn(usersService, 'validateUser').mockResolvedValue(null);
+      expect(result).toEqual({
+        token: 'token-jwt',
+        user: responseDto,
+      });
+    });
+    it('deve lançar UnauthorizedException se login falhar', async () => {
+      (usersService.validateUser as jest.Mock).mockResolvedValue(null);
 
       await expect(
-        service.login({ email: 'test@example.com', password: 'wrong' }),
-      ).rejects.toThrow(new UnauthorizedException('E-mail ou senha inválidos'));
-    });
-  });
-
-  describe('loginGoogleMobile', () => {
-    it('should successfully login/register with google token', async () => {
-      const ticketMock = {
-        getPayload: () => ({
-          email: 'google@example.com',
-          given_name: 'Google',
-          family_name: 'User',
-          picture: 'photo-url',
+        service.login({
+          email: 'teste@email.com',
+          password: 'errada',
         }),
-      };
-      mockVerifyIdToken.mockResolvedValue(ticketMock);
-
-      const userMock = {
-        id: 'google-user-uuid',
-        email: 'google@example.com',
-        provider: Provider.GOOGLE,
-      } as unknown as User;
-      jest
-        .spyOn(usersService, 'buscarOuCriarSocial')
-        .mockResolvedValue(userMock);
-
-      const result = await service.loginGoogleMobile('google-token');
-      expect(result.token).toBe('signed-token');
-      expect(usersService.buscarOuCriarSocial).toHaveBeenCalledWith({
-        email: 'google@example.com',
-        firstName: 'Google',
-        lastName: 'User',
-        picture: 'photo-url',
-        provider: Provider.GOOGLE,
-      });
+      ).rejects.toThrow(UnauthorizedException);
     });
 
-    it('should throw UnauthorizedException if ticket payload or email is missing', async () => {
-      const ticketMock = {
-        getPayload: () => null,
-      };
-      mockVerifyIdToken.mockResolvedValue(ticketMock);
+    describe('loginGoogleMobile', () => {
+      const verifyIdToken = jest.fn();
 
-      await expect(service.loginGoogleMobile('invalid-token')).rejects.toThrow(
-        new UnauthorizedException(
-          'Token do Google inválido ou sem e-mail associado',
-        ),
-      );
+      beforeEach(() => {
+        Object.defineProperty(service, 'googleClient', {
+          value: {
+            verifyIdToken,
+          },
+        });
+      });
+
+      it('deve autenticar via Google com sucesso', async () => {
+        verifyIdToken.mockResolvedValue({
+          getPayload: () => ({
+            email: 'google@email.com',
+            given_name: 'Google',
+            family_name: 'User',
+            picture: 'pic',
+          }),
+        });
+
+        (usersService.buscarOuCriarSocial as jest.Mock).mockResolvedValue(
+          mockUser as User,
+        );
+
+        jwtService.sign.mockReturnValue('token-jwt');
+
+        jest.spyOn(UserResponseDto, 'fromEntity').mockReturnValue(responseDto);
+
+        const result = await service.loginGoogleMobile('token-google');
+
+        expect(verifyIdToken).toHaveBeenCalled();
+        expect(usersService.buscarOuCriarSocial).toHaveBeenCalledWith({
+          email: 'google@email.com',
+          firstName: 'Google',
+          lastName: 'User',
+          picture: 'pic',
+          provider: Provider.GOOGLE,
+        });
+
+        expect(result).toEqual({
+          token: 'token-jwt',
+          user: responseDto,
+        });
+      });
+
+      it('deve lançar erro quando payload for inválido', async () => {
+        verifyIdToken.mockResolvedValue({
+          getPayload: () => null,
+        });
+
+        await expect(service.loginGoogleMobile('token')).rejects.toThrow(
+          UnauthorizedException,
+        );
+      });
+
+      it('deve lançar erro quando não houver email', async () => {
+        verifyIdToken.mockResolvedValue({
+          getPayload: () => ({
+            given_name: 'Google',
+          }),
+        });
+
+        await expect(service.loginGoogleMobile('token')).rejects.toThrow(
+          UnauthorizedException,
+        );
+      });
     });
   });
 });
