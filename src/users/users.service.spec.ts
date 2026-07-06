@@ -7,6 +7,7 @@ import {
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { UsersService } from './users.service';
 import { User } from './entities/user.entity';
+import { Profile } from './entities/profile.entity';
 import { Certificate } from './entities/certificate.entity';
 import { PortfolioItem } from './entities/portfolio-item.entity';
 import { RolesService } from '../roles/roles.service';
@@ -211,9 +212,9 @@ describe('UsersService - US02 (Manter Perfil)', () => {
     it('deve lançar NotFoundException se o usuário não for encontrado', async () => {
       userRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.updateStatus('inexistente', true)).rejects.toBeInstanceOf(
-        NotFoundException,
-      );
+      await expect(
+        service.updateStatus('inexistente', true),
+      ).rejects.toBeInstanceOf(NotFoundException);
     });
   });
 
