@@ -8,6 +8,18 @@ import { Role } from '../roles/entities/role.entity';
 import { UserResponseDto } from '../users/dto/user-response.dto';
 import { Profile } from 'src/users/entities/profile.entity';
 
+// Mock google-auth-library
+const mockVerifyIdToken = jest.fn();
+jest.mock('google-auth-library', () => {
+  return {
+    OAuth2Client: jest.fn().mockImplementation(() => {
+      return {
+        verifyIdToken: mockVerifyIdToken,
+      };
+    }),
+  };
+});
+
 describe('AuthService', () => {
   let service: AuthService;
 
