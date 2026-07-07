@@ -3,6 +3,7 @@ import { Job } from '../../jobs/entities/job.entity';
 import { Profile } from './profile.entity';
 import { Certificate } from './certificate.entity';
 import { PortfolioItem } from './portfolio-item.entity';
+import { Role } from '../../roles/entities/role.entity';
 
 describe('User Entity', () => {
   describe('createLocal', () => {
@@ -13,7 +14,7 @@ describe('User Entity', () => {
         lastName: 'Local',
       };
       const hashedPassword = 'hashed_password_123';
-      const roles: any[] = [{ id: 'r1', name: 'USER' }];
+      const roles = [{ id: 'r1', name: 'USER' } as Role];
 
       const user = User.createLocal(dados, hashedPassword, roles);
 

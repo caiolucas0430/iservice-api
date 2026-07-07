@@ -65,7 +65,10 @@ describe('UsersController', () => {
     });
 
     it('PATCH /users/me/status delega updateStatus', async () => {
-      usersService.updateStatus.mockResolvedValue({ message: 'ok', isOnline: true });
+      usersService.updateStatus.mockResolvedValue({
+        message: 'ok',
+        isOnline: true,
+      });
 
       await controller.updateStatus(req, { isOnline: true });
 

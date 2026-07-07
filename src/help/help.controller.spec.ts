@@ -13,7 +13,9 @@ describe('HelpController', () => {
         {
           provide: HelpService,
           useValue: {
-            getFaq: jest.fn().mockReturnValue([{ id: 1, question: 'Q', answer: 'A' }]),
+            getFaq: jest
+              .fn()
+              .mockReturnValue([{ id: 1, question: 'Q', answer: 'A' }]),
           },
         },
       ],
@@ -29,8 +31,9 @@ describe('HelpController', () => {
 
   describe('getFaq', () => {
     it('should call helpService.getFaq and return its result', () => {
+      const getFaqSpy = jest.spyOn(service, 'getFaq');
       const result = controller.getFaq();
-      expect(service.getFaq).toHaveBeenCalled();
+      expect(getFaqSpy).toHaveBeenCalled();
       expect(result).toEqual([{ id: 1, question: 'Q', answer: 'A' }]);
     });
   });

@@ -8,7 +8,7 @@ describe('Job Entity', () => {
     const userProfessional = new User();
 
     expect(job).toBeDefined();
-    
+
     job.description = 'Test job';
     job.status = JobStatus.SEARCHING;
     job.client = userClient;
