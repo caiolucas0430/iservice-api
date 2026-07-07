@@ -25,8 +25,14 @@ jobs:
       - name: Verificar padrões (Lint)
         run: npm run lint
 
-      - name: Executar Testes Unitários
-        run: npm run test
+      - name: Executar Testes Unitários e Cobertura
+        run: npm run test:cov
 
       - name: Verificar compilação (Build)
         run: npm run build
+
+      - name: Analisar no SonarQube
+        uses: SonarSource/sonarqube-scan-action@v2
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: 'http://labens.dct.ufrn.br/sonarqube'
