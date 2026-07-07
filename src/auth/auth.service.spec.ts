@@ -202,6 +202,29 @@ describe('AuthService', () => {
         });
       });
 
+      it('deve lidar com payload do Google faltando dados opcionais', async () => {
+        verifyIdToken.mockResolvedValue({
+          getPayload: () => ({
+            email: 'google2@email.com',
+          }),
+        });
+
+        (usersService.buscarOuCriarSocial as jest.Mock).mockResolvedValue(
+          mockUser as User,
+        );
+        jwtService.sign.mockReturnValue('token-jwt2');
+
+        await service.loginGoogleMobile('token-google-2');
+
+        expect(usersService.buscarOuCriarSocial).toHaveBeenCalledWith({
+          email: 'google2@email.com',
+          firstName: '',
+          lastName: '',
+          picture: '',
+          provider: Provider.GOOGLE,
+        });
+      });
+
       it('deve lançar erro quando payload for inválido', async () => {
         verifyIdToken.mockResolvedValue({
           getPayload: () => null,

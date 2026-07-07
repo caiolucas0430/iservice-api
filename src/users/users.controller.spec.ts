@@ -95,6 +95,15 @@ describe('UsersController', () => {
       await controller.updatePortfolio(
         req,
         {} as unknown as UpdatePortfolioDto,
+        { avatar: [{} as IFile], cover: [{} as IFile] },
+      );
+      expect(usersService.updatePortfolio).toHaveBeenCalled();
+    });
+
+    it('PATCH /users/me/portfolio - atualiza dados do portfólio sem arquivos', async () => {
+      await controller.updatePortfolio(
+        req,
+        {} as unknown as UpdatePortfolioDto,
         {} as unknown as { avatar?: IFile[]; cover?: IFile[] },
       );
       expect(usersService.updatePortfolio).toHaveBeenCalled();
