@@ -65,7 +65,10 @@ describe('UsersController', () => {
     });
 
     it('PATCH /users/me/status delega updateStatus', async () => {
-      usersService.updateStatus.mockResolvedValue({ message: 'ok', isOnline: true });
+      usersService.updateStatus.mockResolvedValue({
+        message: 'ok',
+        isOnline: true,
+      });
 
       await controller.updateStatus(req, { isOnline: true });
 
@@ -92,6 +95,15 @@ describe('UsersController', () => {
     });
 
     it('PATCH /users/me/portfolio - atualiza dados do portfólio', async () => {
+      await controller.updatePortfolio(
+        req,
+        {} as unknown as UpdatePortfolioDto,
+        { avatar: [{} as IFile], cover: [{} as IFile] },
+      );
+      expect(usersService.updatePortfolio).toHaveBeenCalled();
+    });
+
+    it('PATCH /users/me/portfolio - atualiza dados do portfólio sem arquivos', async () => {
       await controller.updatePortfolio(
         req,
         {} as unknown as UpdatePortfolioDto,
