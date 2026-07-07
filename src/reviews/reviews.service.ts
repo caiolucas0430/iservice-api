@@ -100,4 +100,13 @@ export class ReviewsService {
       })),
     };
   }
+
+  async getRecentReviews() {
+    return await this.reviewRepository.find({
+      order: {
+        createdAt: 'DESC',
+      },
+      take: 3,
+    });
+  }
 }

@@ -29,6 +29,11 @@ export class ReviewsController {
     return this.reviewsService.createReview(createReviewDto, req.user.id);
   }
 
+  @Get('recent')
+  getRecentReviews() {
+    return this.reviewsService.getRecentReviews();
+  }
+
   @Get('user/:userId')
   getReviewsByUser(@Param('userId') userId: string) {
     return this.reviewsService.getReviewsByUser(userId);
